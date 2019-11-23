@@ -30,4 +30,37 @@
 ;;Round number division
 (defun div (divisor divident) (/ (- divisor (mod divisor divident)) divident))
 
-;;Slices the list from given position and for given number of elements
+;;Tests if memList is part of second list 
+(defun memberList (memList secondList) 
+    (cond ((null secondList) '())
+          ((equalp memList (car secondList)) t)
+          (t(memberList memList (cdr secondList)))))
+
+;;Joins two lists without duplicates
+(defun join (firstList secondList)
+    (cond ((null firstList) secondList)
+          ((memberList (car firstList) secondList) (join (cdr firstList) secondList))
+          (t(cons (car firstList) (join (cdr firstList) secondList)))))
+
+;;Counts number of given element in the list
+(defun countEl (element list) 
+    (cond ((null list) 0)
+          ((equal element (car list)) (+ 1 (count element (cdr list)))) 
+          (t(count element (cdr list)))))
+
+;;Inserts element in the list at givent index and pushing out previous element from that place
+(defun insertElement (element list index)
+    (cond ((null list) '())
+          ((equal index 0) (cons element (cdr list)))
+          (t(cons (car list) (insertElement element (cdr list) (- index 1))))))
+
+;;Gets first N elements of passed list 
+(defun getFirstN (numOfElements list) 
+(cond ((or (null list) (> numOfElements (length list)) (= numOfElements 0)) '())
+      (t(cons (car list) (getFirstN (- numOfElements 1) (cdr list))))))
+
+;;Returnes last N elements of passed list
+(defun getLastN (numOfElements list)
+(cond ((null list) '())
+      ((> numOfElements 0) (getLastN (- numOfElements 1) (cdr list)))
+      (t (list EMPTY))))
