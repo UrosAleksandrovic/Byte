@@ -57,4 +57,17 @@
 (defun getLastN (numOfElements list)
 (cond ((null list) (list EMPTY))
       ((> numOfElements 1) (getLastN (- numOfElements 1) (cdr list)))
+      ((= numOfElements 0) (list EMPTY))
       (t list)))
+
+;;Returnes all indexes of symbol in given list. Current index is 0 at the start
+(defun findIndexOf (element list currentIndex)
+    (cond ((null list) '())
+          ((equalp element (car list)) (cons currentIndex (findIndexOf element (cdr list) (+ currentIndex INCREMENT))))
+          (t(findIndexOf element (cdr list) (+ currentIndex INCREMENT)))))
+
+;;Returnes elements from the list that are grater then given number
+(defun returnIfGreaterOrEqual (comparisonElement list)
+    (cond ((null list) '())
+          ((>= (car list) comparisonElement) (cons (car list) (returnIfGreaterOrEqual comparisonElement (cdr list))))
+          (t(returnIfGreaterOrEqual comparisonElement (cdr list)))))
