@@ -1,4 +1,14 @@
-(load "Byte.lisp")
+(load "ByteGame.lisp")
+
+(setq myBoard '(
+    (A ((-) (-) (-) (-)))
+    (B ((-) (-) (-) (-))) 
+    (C ((-) (X O X) (-) (-))) 
+    (D ((-) (O X O O O) (-) (-))) 
+    (E ((-) (-) (-) (-))) 
+    (F ((-) (-) (-) (-))) 
+    (G ((-) (-) (-) (-))) 
+    (H ((-) (-) (-) (-)))))
 
 ;;TESTING BASIC FUNCTIONS-------------------------------
 
@@ -29,7 +39,7 @@
 ;;(readMove myMove)
 ;;(print myMove)
 
-(setq myMove (create-move '(B 1) '(C 2) 0))
+;;(setq myMove (create-move '(D 4) '(C 3) 0))
 ;;(print (moveTilesCheckp myMove 8))
 
 ;;(print (validTilesForMove '(B 1) (nearestTile '(B 1) (tilesOfValidStacks InitialState8x8 '(X) '())) 8))
@@ -42,7 +52,7 @@
 
 ;;States
 
-(setq myState (create-state 8 InitialState8x8))
+;;(setq myState (create-state 8 myBoard BLACK))
 ;(print myState)
 ;;(setq copyState (copyState myState))
 ;;(print copyState)
@@ -67,7 +77,24 @@
 ;;(print (checkMergingPosibility '(O O O X X X) '(O O O O X)))
 ;;(print (tilesOfValidStacks InitialState8x8 '(X) '()))
 ;;(print (numOfMoves '(A 0) '(D 5)))
-;;(print (nearestTile '(B 1) (tilesOfValidStacks InitialState8x8 '(X) '())))
-;;(print (availableTileForGivenTile '(B 1) '(A 0) 8))
+;;(print (nearestTile '(B 3) (tilesOfValidStacks myBoard '(X) '())))
+;;(print (availableTileForGivenTile '(B 3) '(D 3) 8))
 
 ;;(print (moveExistsp myMove myState))
+
+;;(print (gettingAllStartingTilesForPlayer myBoard BLACK '()))
+;;(print (getAllMovesSingleTile myBoard 8 '(C 3)))
+;;(print (allPossibleMovesFromGivenTile myBoard 8 '(C 3)))
+;;(print (allPossibleMovesForPlayerOnMove myState))
+
+;;(print myState)
+;;(print (getAllPossibleStates myState))
+;;(print (state-FinalStacks myState))
+
+(setq potez2 (readMove))
+(setq state1 (create-initial-state 8))
+
+;;(print (moveTilesCheckp potez2 (state-dimension state1)))
+;;(print (tileOutOfBoundsp (move-previousTile potez2) (state-dimension state1)))
+;;(print (tileOutOfBoundsp (move-nextTile potez2) (state-dimension state1)))
+;;(print (altitudeCheck (move-previousTile potez2) (move-nextTile potez2) (move-height potez2) (state-boardValues state1)))
