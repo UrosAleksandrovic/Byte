@@ -71,3 +71,23 @@
     (cond ((null list) '())
           ((>= (car list) comparisonElement) (cons (car list) (returnIfGreaterOrEqual comparisonElement (cdr list))))
           (t(returnIfGreaterOrEqual comparisonElement (cdr list)))))
+
+
+(defvar -∞ '-215)
+(defvar +∞ '214)
+
+(defun getSmaller (a b)
+  (cond
+    ((eql a +∞) b)
+    ((eql b +∞) a)
+    ((eql a -∞) -∞)
+    ((eql b -∞) -∞)
+    (t (min a b))))
+
+(defun getBigger (a b)
+  (cond
+    ((eql a -∞) b)
+    ((eql b -∞) a)
+    ((eql a +∞) +∞)
+    ((eql b +∞) +∞)
+    (t (max a b))))

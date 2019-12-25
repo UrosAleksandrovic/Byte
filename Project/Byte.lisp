@@ -73,12 +73,12 @@
 (defun moveTilesCheckp (moveToCheck dimension)
     (if (and 
             (checkTilep (tileIndex  (car (move-previousTile moveToCheck)) 
-                                    (+ DECREMENT (cadr (move-previousTile moveToCheck))) 
+                                    (cadr (move-previousTile moveToCheck))
                                     PossibleRows dimension) 
                         dimension)
             (checkTilep (tileIndex  (car (move-nextTile moveToCheck)) 
-                                    (+ DECREMENT (cadr (move-nextTile moveToCheck))) 
-                                    PossibleRows dimension) 
+                                    (cadr (move-nextTile moveToCheck))
+                                    PossibleRows dimension)
                         dimension)) t '()))
 
 ;;Returnes all of valid tiles that player can move to in one move
@@ -134,7 +134,9 @@
 (defun moveExistsp (moveToCheck stateOfGame)
     (let* ((nextTileStack (valueOfTile (move-nextTile moveToCheck) (state-boardValues stateOfGame)))
            (previousTileStack (valueOfTile (move-previousTile moveToCheck) (state-boardValues stateOfGame))))
-    (and (moveTilesCheckp moveToCheck (state-dimension stateOfGame))
+    (and
+        (not (equal previousTileStack (list EMPTY)))
+        (moveTilesCheckp moveToCheck (state-dimension stateOfGame))
         (tileOutOfBoundsp (move-previousTile moveToCheck) (state-dimension stateOfGame))
         (tileOutOfBoundsp (move-nextTile moveToCheck) (state-dimension stateOfGame))
         (altitudeCheck (move-previousTile moveToCheck) (move-nextTile moveToCheck) (move-height moveToCheck) (state-boardValues stateOfGame))
@@ -152,12 +154,12 @@
 
 ;;Completes last function
 (defun allPossibleMovesFromGivenTile (currentGameBoard dimension startingTile)
-    (getAllMovesSingleTile startingTile (car (validTilesForMove
+    (getAllMovesSingleTile startingTile (validTilesForMove
                                                  startingTile
                                                  (nearestTile startingTile
                                                               (tilesOfValidStacks currentGameBoard
                                                                               (valueOfTile startingTile currentGameBoard)
-                                                                              '())) dimension))))
+                                                                              '())) dimension)))
 
 ;;Returnes all possible moves for one player
 (defun allPossibleMovesForOnePlayer (allPossibleStartingTilesForPlayer currentGameBoard dimension) 
@@ -182,7 +184,9 @@
 (defun getAllPossibleStates (currentState)
     (let ((possibleMoves (allPossibleMovesForPlayerOnMove currentState))
           (allPossibleStates '()))
-          (maplist (lambda (singleMove) (playMove (car singleMove) currentState)) possibleMoves)))
+          (if (null (checkFinalState currentState))
+              (maplist (lambda (singleMove) (playMove (car singleMove) currentState)) possibleMoves)
+             '())))
 
 
 ;;-------------------------------------------
@@ -204,7 +208,9 @@
 
 ;;Option function for printing State on standard outstream
 (defun print-board (stateToPrint outputStream)
-(prog1 (drawFirstRow)
+(prog1
+    (format t "---------------------------- ~%")
+    (drawFirstRow)
     (do ((indexer 0 (+ indexer 1))) 
         ((= indexer (state-dimension stateToPrint)) indexer)
         (if (= (mod indexer 2) 0)
@@ -257,7 +263,7 @@
 ;;Returnes the index value of a element in our state. Input is list (row column).
 (defun tileIndex (row column listOfRows dimension) 
     (cond ((null listOfRows) '())
-        ((equalp row (car listOfRows)) column)
+        ((equalp row (car listOfRows)) (+ DECREMENT column))
         (t(+ dimension (tileIndex row column (cdr listOfRows) dimension)))))
 
 ;;Returnes the quadrant of given Tile
@@ -300,10 +306,14 @@
         (t (valueOfTile tile (cdr currentGameBoard)))))
 
 ;;Returnes the diagonal tile with given directions
-(defun diagonalTile (startingTile rowDirection columnDirection) 
-    (list (nth (+ (indexOf (car startingTile) PossibleRows) rowDirection) PossibleRows) (+ (cadr startingTile) columnDirection)))
+(defun diagonalTile (startingTile rowDirection columnDirection dimension) 
+    (cond ((or (> (+ (indexOf (car startingTile) PossibleRows) rowDirection) dimension)
+               (< (+ (indexOf (car startingTile) PossibleRows) rowDirection) 0)) '())
+          ((or (> (+ (cadr startingTile) columnDirection) dimension)
+               (<= (+ (cadr startingTile) columnDirection) 0)) '())
+          (t (list (list (nth (+ (indexOf (car startingTile) PossibleRows) rowDirection) PossibleRows) (+ (cadr startingTile) columnDirection))))))
 
-;Returnes all tiles that have given symbol on the top
+;Returnes all tiles that have possibility to merhe with starting stack
 (defun tilesOfValidStacks (currentGameBoard startingStackValue currentTile) 
     (cond ((null currentGameBoard) '())
           ((member (caar currentGameBoard) PossibleRows)
@@ -344,6 +354,7 @@
                   (currentBest (numOfMoves startingTile (car bestTiles)))
                   (possibleBest (numOfMoves startingTile (car listOfTiles))))
                 (cond ((= possibleBest 0) bestTiles)
+                      ((= currentBest 0) (list(car listOfTiles)))
                       ((= currentBest possibleBest) (cons (car listOfTiles) bestTiles))
                       ((> currentBest possibleBest) (list(car listOfTiles)))
                       ((< currentBest possibleBest) bestTiles))))))
@@ -352,25 +363,25 @@
 (defun availableTileForGivenTile (startingTile singleNearestTile dimension)
     (let ((quadrantOfTarget (tileQuadrant startingTile singleNearestTile)))
          (cond ((= quadrantOfTarget 1) (if (sameSideDiagonalp startingTile singleNearestTile dimension)
-                                           (list (diagonalTile startingTile DECREMENT INCREMENT))
-                                            (list 
-                                                (diagonalTile startingTile DECREMENT INCREMENT)
-                                                (diagonalTile startingTile INCREMENT INCREMENT))))
+                                            (diagonalTile startingTile DECREMENT INCREMENT dimension)
+                                            (append 
+                                                (diagonalTile startingTile DECREMENT INCREMENT dimension)
+                                                (diagonalTile startingTile INCREMENT INCREMENT dimension))))
                ((= quadrantOfTarget 2) (if (sameMainDiagonal startingTile singleNearestTile dimension)
-                                            (list (diagonalTile startingTile DECREMENT DECREMENT))
-                                            (list 
-                                                (diagonalTile startingTile DECREMENT DECREMENT)
-                                                (diagonalTile startingTile DECREMENT INCREMENT))))
+                                            (diagonalTile startingTile DECREMENT DECREMENT dimension)
+                                            (append 
+                                                (diagonalTile startingTile DECREMENT DECREMENT dimension)
+                                                (diagonalTile startingTile DECREMENT INCREMENT dimension))))
                ((= quadrantOfTarget 3) (if (sameSideDiagonalp startingTile singleNearestTile dimension)
-                                            (list (diagonalTile startingTile INCREMENT DECREMENT))
-                                            (list 
-                                                (diagonalTile startingTile INCREMENT DECREMENT)
-                                                (diagonalTile startingTile DECREMENT DECREMENT))))
+                                            (diagonalTile startingTile INCREMENT DECREMENT dimension)
+                                            (append 
+                                                (diagonalTile startingTile INCREMENT DECREMENT dimension)
+                                                (diagonalTile startingTile DECREMENT DECREMENT dimension))))
                ((= quadrantOfTarget 4) (if (sameMainDiagonal startingTile singleNearestTile dimension)
-                                            (list (diagonalTile startingTile INCREMENT INCREMENT))
-                                            (list 
-                                                (diagonalTile startingTile INCREMENT INCREMENT)
-                                                (diagonalTile startingTile INCREMENT DECREMENT)))))))
+                                            (diagonalTile startingTile INCREMENT INCREMENT dimension)
+                                            (append 
+                                                (diagonalTile startingTile INCREMENT INCREMENT dimension)
+                                                (diagonalTile startingTile INCREMENT DECREMENT dimension)))))))
 
 ;;Gets all possible starting tiles for player on the move
 (defun gettingAllStartingTilesForPlayer (currentGameBoard currentPlayerSymbol currentTile)
@@ -394,12 +405,27 @@
     (:constructor create-player (&optional symbol)))
     symbol)
 
+(defstruct (humanPlayer
+             (:include player)
+             (:predicate human-p)
+             (:constructor createHuman (&optional symbol))))
+
 
 (defun playerMakeMove (player game)
     (let ((playerMove (readMove)))
          (if (moveExistsp playerMove (byteGame-stateOfGame game))
              (playMove playerMove (byteGame-stateOfGame game))
              (playerMakeMove player game))))
+
+
+(defstruct (AIPlayer
+             (:include player)
+             (:predicate ai-p)
+             (:constructor createAI (&optional symbol))))
+
+(defun AIMakeMove (player game)
+  (let ((AINewState (alphabeta (list (byteGame-stateOfGame game) -∞) 2 (list (byteGame-stateOfGame game) -∞) (list (byteGame-stateOfGame game) +∞) t)))
+        (car AINewState)))
 
 ;;Structure for a game
 (defstruct (byteGame
@@ -420,3 +446,73 @@
     (setf (state-currentPlayer  (byteGame-stateOfGame game)) (player-symbol player))
     (print (byteGame-stateOfGame game))
     (setf (byteGame-stateOfGame game) (playerMakeMove player game))))
+
+(defun startGameWithAI (game)
+    (do* ((firstPlayer (byteGame-firstPlayer game))
+          (secondPlayer (byteGame-secondPlayer game))
+          (player (byteGame-firstPlayer game) (if (equal player firstPlayer) secondPlayer firstPlayer)))
+         ((not (null (checkFinalState (byteGame-stateOfGame game)))) (print (byteGame-stateOfGame game))
+                (format t "Game winner is ~A" (car (checkFinalState (byteGame-stateOfGame game)))))
+         (setf (state-currentPlayer  (byteGame-stateOfGame game)) (player-symbol player))
+         (print (byteGame-stateOfGame game))
+         (setf (byteGame-stateOfGame game) (gamePlayMove player game))))
+
+(defun gamePlayMove (player game)
+    (cond ((human-p  player) (playerMakeMove player game))
+          ((ai-p player) (AIMakeMove player game))))
+
+
+;;---------------------------------------------------------
+
+(defun evaluateState (stateToEvaluate) '1)
+
+
+(defun createStateGraph (allPossibleStates) 
+    (cond ((null allPossibleStates) '())
+          (t(cons (list (car allPossibleStates) (evaluateState (car allPossibleStates)))
+                  (createStateGraph (cdr allPossibleStates))))))
+
+(defun findMaxState (graphOfAllStates)
+    (findMaxFromGraph (cdr graphOfAllStates) (car graphOfAllStates)))
+
+(defun findMaxFromGraph (graphOfStates currentState)
+    (cond ((null graphOfStates) currentState)
+          ((> (cadar graphOfStates) (cadr currentState))
+                (findMaxFromGraph (cdr graphOfStates) (car graphOfStates)))
+          (t(findMaxFromGraph (cdr graphOfStates) currentState))))
+
+(defun findMinState (graphOfStates) 
+    (findMinFromGraph (cdr graphOfStates) (car graphOfAllStates)))
+
+(defun findMinFromGraph (graphOfStates currentState) 
+    (cond ((null graphOfStates) currentState)
+            ((< (cadar graphOfStates) (cadr currentState))
+                    (findMinFromGraph (cdr graphOfStates) (car graphOfStates)))
+            (t(findMinFromGraph (cdr graphOfStates) currentState))))
+
+(defun minMax (state debth minMaxAction) 
+    (let ((allStates (createStateGraph (getAllPossibleStates myState)))
+          (action (if minMaxAction 'findMaxFromGraph 'findMinFromGraph)))
+         (cond ((or (zerop debth) (null allStates)) (list stanje (evaluateState state)))
+               (t(apply action (list (mapcar (lambda (x) (minMax x (+ 1 DECREMENT) (not minMaxAction))) allStates)))))))
+
+(defun alphabeta (currentState debth alpha beta maxPlayerp)
+  (when (or (= debth 0) (not (null (checkFinalState (car currentState)))))
+    (return-from alphabeta (list (car currentState) (evaluateState (car currentState)))))
+  (if maxPlayerp
+      (let ((newAlpha -∞))
+        (dolist (singleState (createStateGraph (getAllPossibleStates (car currentState))))
+          (setf newAlpha (getBigger newAlpha (cadr (alphabeta (list (car singleState) (evaluatestate (car singleState))) (+ DECREMENT debth) alpha beta nil))))
+          (setf alpha (if (equal (getBigger (cadr alpha) newAlpha) (cadr alpha)) alpha (list (car singleState) newAlpha)))
+          (when (<= (cadr beta) (cadr alpha))
+            ;; β cut-off
+            (return)))
+        (list (car alpha) newAlpha))
+      (let ((newBeta +∞))
+        (dolist (singleState (createStateGraph (getAllPossibleStates (car currentState))))
+          (setf newBeta (getSmaller newBeta (cadr (alphabeta (list (car singleState) (evaluatestate (car singleState))) (+ DECREMENT debth) alpha beta t))))
+          (setf alpha (if (equal (getSmaller (cadr alpha) newBeta) (cadr alpha)) alpha (list (car singleState) newBeta)))
+          (when (<= (cadr beta) (cadr alpha))
+            ;; α cut-off
+            (return)))
+        (list (car alpha) newBeta))))
