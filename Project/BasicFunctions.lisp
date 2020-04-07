@@ -75,7 +75,7 @@
 
 (defvar -∞ '-215)
 (defvar +∞ '214)
-
+;;Used in alpha beta. Helper functions for logical operations with infinity
 (defun getSmaller (a b)
   (cond
     ((eql a +∞) b)

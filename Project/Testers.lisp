@@ -91,8 +91,8 @@
 ;;(print (gettingAllStartingTilesForPlayer myBoard WHITE '()))
 ;;(print (allPossibleMovesFromGivenTile myBoard 8 '(F 2)))
 ;;(print (allPossibleMovesFromGivenTile myBoard 8 '(A 7)))
-(print myState)
-(print (allPossibleMovesForPlayerOnMove myState))
+;;(print myState)
+;;(print (allPossibleMovesForPlayerOnMove myState))
 
 ;;(print myState)
 ;;(print (getAllPossibleStates myState))
@@ -109,3 +109,4 @@
 ;;----------------------------------
 ;;(setq testerState (create-initial-state 8))
 ;;(print (alphabeta (list myState '0) 1 (list myState -∞) (list myState +∞) t))
+

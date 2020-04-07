@@ -108,7 +108,8 @@
 (defun calculateNewStartingTileStack (startingTile startingAltitude stateOfGame)
     (let ((startingTileStack (valueOfTile startingTile (state-boardValues stateOfGame))))
          (cond ((>= startingAltitude (length startingTileStack)) startingTileStack)
-               (t(getLastN startingAltitude startingTileStack)))))
+               ((equalp startingAltitude '0) '(-))
+               (t(getFirstN startingAltitude startingTileStack)))))
 
 ;;Alters one Row of the game board after the move
 (defun insertNewTileStack (newTileStack tileToAlter currentGameBoard)
@@ -180,14 +181,13 @@
                                  (if (equalp (state-currentPlayer stateOfGame) BLACK) WHITE BLACK))))
          (progn (setf (state-finalStacks newState) (state-finalStacks stateOfGame)) newState)))
 
-;;
+;;Creates all possible states that player can change in next move
 (defun getAllPossibleStates (currentState)
     (let ((possibleMoves (allPossibleMovesForPlayerOnMove currentState))
           (allPossibleStates '()))
           (if (null (checkFinalState currentState))
               (maplist (lambda (singleMove) (playMove (car singleMove) currentState)) possibleMoves)
              '())))
-
 
 ;;-------------------------------------------
 
@@ -405,24 +405,26 @@
     (:constructor create-player (&optional symbol)))
     symbol)
 
+;;Structure for a human player: derived from player
 (defstruct (humanPlayer
              (:include player)
              (:predicate human-p)
              (:constructor createHuman (&optional symbol))))
 
-
+;;Reads a move from standard input and then playes that move
 (defun playerMakeMove (player game)
     (let ((playerMove (readMove)))
          (if (moveExistsp playerMove (byteGame-stateOfGame game))
              (playMove playerMove (byteGame-stateOfGame game))
              (playerMakeMove player game))))
 
-
+;;Structure for a AI player: derived from player
 (defstruct (AIPlayer
              (:include player)
              (:predicate ai-p)
              (:constructor createAI (&optional symbol))))
 
+;;Calls alpha beta function for AI player and plays result move
 (defun AIMakeMove (player game)
   (let ((AINewState (alphabeta (list (byteGame-stateOfGame game) -∞) 2 (list (byteGame-stateOfGame game) -∞) (list (byteGame-stateOfGame game) +∞) t)))
         (car AINewState)))
@@ -437,6 +439,7 @@
             secondPlayer
             stateOfGame)
 
+;;Creates structure that represents a game. Adding first and second player as well of state of the game.
 (defun startGame (game)
   (do* ((firstPlayer (byteGame-firstPlayer game))
         (secondPlayer (byteGame-secondPlayer game))
@@ -447,6 +450,7 @@
     (print (byteGame-stateOfGame game))
     (setf (byteGame-stateOfGame game) (playerMakeMove player game))))
 
+;;Starts the game with AI player
 (defun startGameWithAI (game)
     (do* ((firstPlayer (byteGame-firstPlayer game))
           (secondPlayer (byteGame-secondPlayer game))
@@ -457,21 +461,22 @@
          (print (byteGame-stateOfGame game))
          (setf (byteGame-stateOfGame game) (gamePlayMove player game))))
 
+;;Calls a next player to make a move
 (defun gamePlayMove (player game)
     (cond ((human-p  player) (playerMakeMove player game))
           ((ai-p player) (AIMakeMove player game))))
 
 
 ;;---------------------------------------------------------
-
+;;Heuristics, NOT IMPLEMENTED
 (defun evaluateState (stateToEvaluate) '1)
 
-
+;;Creates graph from all possible states
 (defun createStateGraph (allPossibleStates) 
     (cond ((null allPossibleStates) '())
           (t(cons (list (car allPossibleStates) (evaluateState (car allPossibleStates)))
                   (createStateGraph (cdr allPossibleStates))))))
-
+;;Findes maximumm of any evaluated state in the graph
 (defun findMaxState (graphOfAllStates)
     (findMaxFromGraph (cdr graphOfAllStates) (car graphOfAllStates)))
 
@@ -481,6 +486,7 @@
                 (findMaxFromGraph (cdr graphOfStates) (car graphOfStates)))
           (t(findMaxFromGraph (cdr graphOfStates) currentState))))
 
+;;Findes minimum of any evaluated state in the graph
 (defun findMinState (graphOfStates) 
     (findMinFromGraph (cdr graphOfStates) (car graphOfAllStates)))
 
@@ -490,12 +496,14 @@
                     (findMinFromGraph (cdr graphOfStates) (car graphOfStates)))
             (t(findMinFromGraph (cdr graphOfStates) currentState))))
 
+;;Min max algorithm
 (defun minMax (state debth minMaxAction) 
     (let ((allStates (createStateGraph (getAllPossibleStates myState)))
           (action (if minMaxAction 'findMaxFromGraph 'findMinFromGraph)))
          (cond ((or (zerop debth) (null allStates)) (list stanje (evaluateState state)))
                (t(apply action (list (mapcar (lambda (x) (minMax x (+ 1 DECREMENT) (not minMaxAction))) allStates)))))))
 
+;;Alpha beta prunning
 (defun alphabeta (currentState debth alpha beta maxPlayerp)
   (when (or (= debth 0) (not (null (checkFinalState (car currentState)))))
     (return-from alphabeta (list (car currentState) (evaluateState (car currentState)))))
@@ -505,7 +513,7 @@
           (setf newAlpha (getBigger newAlpha (cadr (alphabeta (list (car singleState) (evaluatestate (car singleState))) (+ DECREMENT debth) alpha beta nil))))
           (setf alpha (if (equal (getBigger (cadr alpha) newAlpha) (cadr alpha)) alpha (list (car singleState) newAlpha)))
           (when (<= (cadr beta) (cadr alpha))
-            ;; β cut-off
+            ;; β odsecanje
             (return)))
         (list (car alpha) newAlpha))
       (let ((newBeta +∞))
@@ -513,6 +521,6 @@
           (setf newBeta (getSmaller newBeta (cadr (alphabeta (list (car singleState) (evaluatestate (car singleState))) (+ DECREMENT debth) alpha beta t))))
           (setf alpha (if (equal (getSmaller (cadr alpha) newBeta) (cadr alpha)) alpha (list (car singleState) newBeta)))
           (when (<= (cadr beta) (cadr alpha))
-            ;; α cut-off
+            ;; α odsecanje
             (return)))
         (list (car alpha) newBeta))))
